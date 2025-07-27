@@ -1,5 +1,13 @@
 public class DummyJsonUser {
+    public DummyJsonUser(String id, String firstName, String lastName, String email, String phone) {
+        this.salesforceId = id;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.email = email;
+        this.phone = phone;
+    }
     public String id;
+    public String salesforceId;
     public String firstName;
     public String lastName;
     public String email;

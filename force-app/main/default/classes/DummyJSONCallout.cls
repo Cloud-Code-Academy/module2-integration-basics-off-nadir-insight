@@ -66,7 +66,7 @@ public with sharing class DummyJSONCallout {
      * @param String jsonResponse The JSON string from the external system that contains user details.
      * @return Contact The Salesforce Contact object populated with details from the JSON string.
      */
-	@TestVisible // Allows test class to see this method. Since it is private, it would not be visible otherwise.
+	@TestVisible
 	private static Contact createContactFromJson(String jsonResponse) {
         DummyJsonUser dummyJsonUser = (DummyJsonUser) JSON.deserialize(jsonResponse, DummyJsonUser.class);
         Contact cont = new Contact(
@@ -130,7 +130,8 @@ public with sharing class DummyJSONCallout {
      * @return String The JSON string payload that represents the Contact's details.
      */
 	@TestVisible // Allows test class to see this method. Since it is private, it would not be visible otherwise.
-	private static String generateDummyJsonUserPayload(String contactId) {
+	// private static String generateDummyJsonUserPayload(String contactId) {
+	public static String generateDummyJsonUserPayload(String contactId) {
 		// Query the contact to get the field values to generate the JSON payload.
 
 		// Create a map of the field values.
@@ -138,7 +139,14 @@ public with sharing class DummyJSONCallout {
 		// Serialize the map into a JSON string.
 		// Make sure to check that required contacts fields have a value. Default the value to unknown if it does not exists.
 		// Integration data can change over time. It is a best practice to add safeguards/validation to ensure the integration does not break.
-
-		return null;
+        Contact cont = [SELECT Id, FirstName, LastName, Email, Phone FROM Contact WHERE Id = :contactId];
+        DummyJsonUser dummyJsonUser = new DummyJsonUser(
+            cont.Id,
+            cont.FirstName,
+            cont.LastName,
+            cont.Email,
+            cont.Phone
+        );
+		return JSON.serialize(dummyJsonUser);
 	}
 }
