@@ -140,13 +140,20 @@ public with sharing class DummyJSONCallout {
 		// Make sure to check that required contacts fields have a value. Default the value to unknown if it does not exists.
 		// Integration data can change over time. It is a best practice to add safeguards/validation to ensure the integration does not break.
         Contact cont = [SELECT Id, FirstName, LastName, Email, Phone FROM Contact WHERE Id = :contactId];
-        DummyJsonUser dummyJsonUser = new DummyJsonUser(
-            cont.Id,
-            cont.FirstName,
-            cont.LastName,
-            cont.Email,
-            cont.Phone
-        );
-		return JSON.serialize(dummyJsonUser);
+        // DummyJsonUser dummyJsonUser = new DummyJsonUser(
+        //     cont.Id,
+        //     cont.FirstName,
+        //     cont.LastName,
+        //     cont.Email,
+        //     cont.Phone
+        // );
+        Map<String, Object> jsonMap = new Map<String, Object>{
+                'salesforceId' => cont.Id != null ? cont.Id : 'Unknown',
+                'firstName'  => cont.FirstName != null ? cont.FirstName : 'Unknown',
+                'lastName' => cont.LastName != null ? cont.LastName : 'Unknown',
+                'email' => cont.Email != null ? cont.Email : 'Unknown',
+                'phone' => cont.Phone != null ? cont.Phone : 'Unknown'
+        };
+		return JSON.serialize(jsonMap);
 	}
 }
