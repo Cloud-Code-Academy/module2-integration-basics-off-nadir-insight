@@ -22,7 +22,11 @@
  */
 
 public with sharing class DummyJSONCallout {
-
+    private static final String HTTP_GET    = 'GET';
+    private static final String HTTP_POST   = 'POST';
+    private static final String HTTP_PUT    = 'PUT';
+    private static final String HTTP_PATCH  = 'PATCH';
+    private static final String HTTP_DELETE = 'DELETE';
 	/* 
 	 * Question 1
      * Fetches user information from an external system https://dummyjson.com/user/{id} ('DummyJsonUser') based on the provided dummy user ID. 
@@ -35,7 +39,7 @@ public with sharing class DummyJSONCallout {
      */
 
 	public static void getDummyJSONUserFromId(String dummyUserId) {
-        HTTPResponse response = sendRequest('callout:DummyJsonUser/1', 'GET');
+        HTTPResponse response = sendRequest('callout:DummyJsonUser/' + dummyUserId, HTTP_GET);
         Integer statusCode = response.getStatusCode();
         if (statusCode >= 200 && statusCode < 300) {
             Contact cont = createContactFromJson(response.getBody());
@@ -129,30 +133,15 @@ public with sharing class DummyJSONCallout {
      * @param String contactId The Salesforce Contact ID used to fetch the contact's fields and generate the JSON payload.
      * @return String The JSON string payload that represents the Contact's details.
      */
-	@TestVisible // Allows test class to see this method. Since it is private, it would not be visible otherwise.
-	// private static String generateDummyJsonUserPayload(String contactId) {
-	public static String generateDummyJsonUserPayload(String contactId) {
-		// Query the contact to get the field values to generate the JSON payload.
-
-		// Create a map of the field values.
-
-		// Serialize the map into a JSON string.
-		// Make sure to check that required contacts fields have a value. Default the value to unknown if it does not exists.
-		// Integration data can change over time. It is a best practice to add safeguards/validation to ensure the integration does not break.
+	@TestVisible
+	private static String generateDummyJsonUserPayload(String contactId) {
         Contact cont = [SELECT Id, FirstName, LastName, Email, Phone FROM Contact WHERE Id = :contactId];
-        // DummyJsonUser dummyJsonUser = new DummyJsonUser(
-        //     cont.Id,
-        //     cont.FirstName,
-        //     cont.LastName,
-        //     cont.Email,
-        //     cont.Phone
-        // );
         Map<String, Object> jsonMap = new Map<String, Object>{
-                'salesforceId' => cont.Id != null ? cont.Id : 'Unknown',
-                'firstName'  => cont.FirstName != null ? cont.FirstName : 'Unknown',
-                'lastName' => cont.LastName != null ? cont.LastName : 'Unknown',
-                'email' => cont.Email != null ? cont.Email : 'Unknown',
-                'phone' => cont.Phone != null ? cont.Phone : 'Unknown'
+            'salesforceId' => cont.Id != null ? cont.Id : 'Unknown',
+            'firstName'  => cont.FirstName != null ? cont.FirstName : 'Unknown',
+            'lastName' => cont.LastName != null ? cont.LastName : 'Unknown',
+            'email' => cont.Email != null ? cont.Email : 'Unknown',
+            'phone' => cont.Phone != null ? cont.Phone : 'Unknown'
         };
 		return JSON.serialize(jsonMap);
 	}
