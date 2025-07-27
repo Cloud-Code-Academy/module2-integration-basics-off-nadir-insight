@@ -27,6 +27,9 @@ public with sharing class DummyJSONCallout {
     private static final String HTTP_PUT    = 'PUT';
     private static final String HTTP_PATCH  = 'PATCH';
     private static final String HTTP_DELETE = 'DELETE';
+    
+    private static final Integer TIMEOUT_MS = 10000;
+
 	/* 
 	 * Question 1
      * Fetches user information from an external system https://dummyjson.com/user/{id} ('DummyJsonUser') based on the provided dummy user ID. 
@@ -39,7 +42,7 @@ public with sharing class DummyJSONCallout {
      */
 
 	public static void getDummyJSONUserFromId(String dummyUserId) {
-        HTTPResponse response = sendRequest('callout:DummyJsonUser/' + dummyUserId, HTTP_GET);
+        HTTPResponse response = makeCallout(HTTP_GET, 'callout:DummyJsonUser/' + dummyUserId, null, null);
         Integer statusCode = response.getStatusCode();
         if (statusCode >= 200 && statusCode < 300) {
             Contact cont = createContactFromJson(response.getBody());
@@ -47,13 +50,54 @@ public with sharing class DummyJSONCallout {
         }
 	}
 
-    private static HttpResponse sendRequest(String endpoint, String method) {
-        HttpRequest request = new HttpRequest();
-        request.setEndpoint(endpoint);
-        request.setMethod(method);
-        Http http = new Http();
-        return http.send(request);
-    } 
+    // private static HttpResponse sendRequest(String endpoint, String method) {
+    //     HttpRequest request = new HttpRequest();
+    //     request.setEndpoint(endpoint);
+    //     request.setMethod(method);
+    //     Http http = new Http();
+    //     return http.send(request);
+    // }
+
+    public static HttpResponse makeCallout(
+        String method,
+        String endpoint,
+        String payload,
+        Map<String, String> additionalHeaders
+    ) {
+        HttpRequest req = new HttpRequest();
+        req.setEndpoint(endpoint);
+        req.setMethod(method);
+        req.setTimeout(TIMEOUT_MS);
+        req.setHeader('Content-Type', 'application/json');
+
+        if (payload != null) {
+            req.setBody(payload);
+        }
+
+        if (additionalHeaders != null) {
+            for (String key : additionalHeaders.keySet()) {
+                req.setHeader(key, additionalHeaders.get(key));
+            }
+        }
+
+        try {
+            Http http = new Http();
+            HttpResponse response = http.send(req);
+
+            Integer statusCode = response.getStatusCode();
+            if (statusCode >= 200 && statusCode < 300) {
+                return response;
+            } else {
+                System.debug('Callout failed. Status Code: ' + statusCode);
+                System.debug('Response Body: ' + response.getBody());
+                return response;
+            }
+
+        } catch (CalloutException ex) {
+            System.debug('Callout Exception: ' + ex.getMessage());
+            throw ex;
+        }
+    }
 
 	/* 
 	 * Question 2
@@ -105,17 +149,14 @@ public with sharing class DummyJSONCallout {
      */
 	
 	public static void postCreateDummyJSONUser(String contactId) {
-		// Create HTTP request to send.
-
-		// Set the endpoint URL. Use direct URL or for best practices use Named Credential.
-
-		// Set the HTTP method to POST.
-
-		// Set the body using generateDummyJsonUserPayload method.
-
-		// Send the HTTP request and get the response.
-
-		// If the HTTP response code is successful, update the contact.
+        String jsonPayload = generateDummyJsonUserPayload(contactId);
+        HttpResponse response = makeCallout(HTTP_POST, 'callout:DummyJsonUser/add', jsonPayload, null);
+        Integer statusCode = response.getStatusCode();
+        if (statusCode >= 200 && statusCode < 300) {
+            Contact cont = [SELECT Id, DummyJSON_Last_Updated__c FROM Contact WHERE Id = :contactId];
+            cont.DummyJSON_Last_Updated__c = System.now();
+            Update cont;
+        }
 	}
 
 	/*

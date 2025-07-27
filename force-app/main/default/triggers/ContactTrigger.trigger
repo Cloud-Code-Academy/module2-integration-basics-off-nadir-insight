@@ -19,6 +19,26 @@
 trigger ContactTrigger on Contact(before insert) {
 	// When a contact is inserted
 	// if DummyJSON_Id__c is null, generate a random number between 0 and 100 and set this as the contact's DummyJSON_Id__c value
+    switch on Trigger.operationType {
+    when BEFORE_INSERT {
+        for (Contact cont : Trigger.new) {
+            String randomValueBetween0and100 = String.valueof(Math.round(Math.random() * 100));
+            cont.DummyJSON_Id__c = cont.DummyJSON_Id__c != null ? cont.DummyJSON_Id__c : randomValueBetween0and100;
+        }
+    }
+    when AFTER_INSERT {
+        for (Contact cont : Trigger.new) {
+            DummyJSONCallout.getDummyJSONUserFromId(cont.DummyJSON_Id__c);
+        }
+    }
+    when AFTER_UPDATE {
+        for (Contact cont : Trigger.new) {
+            DummyJSONCallout.postCreateDummyJSONUser(cont.Id);
+        }
+    }
+}
+
+
 
 	//When a contact is inserted
 	// if DummyJSON_Id__c is less than or equal to 100, call the getDummyJSONUserFromId API
