@@ -33,20 +33,57 @@ public with sharing class DummyJSONCallout {
 	 * 
      * @param dummyUserId The ID of the user in the external system to fetch data for.
      */
+    // id -> build callout
+    // send request
+    // if request is good
+    // parse callout
+    // update data
 
 	public static void getDummyJSONUserFromId(String dummyUserId) {
 		// Create HTTP request to send.
-
+        // HttpRequest request = new HttpRequest();
 		// Set the endpoint URL. Use direct URL or for best practices use Named Credential.
-
+        // request.setEndpoint('https://dummyjson.com/user/1');
 		// Set the HTTP method to GET.
+        // request.setMethod('GET');
 
 		// Send the HTTP request and get the response.
+        // Http http = new Http();
+        // String endPoint = 'https://dummyjson.com/user/1';
+        String endPoint = 'callout:DummyJsonUser/1';
+        String method = 'GET';
+        HTTPResponse response = sendRequest(endPoint, method);
 
 		// If the HTTP response code is successful, parse the JSON response and update the contact.
-		Contact cont = null;
-		upsert cont DummyJSON_Id__c; //insert/update from the JSON response using the external id (dummyUserId)
+        Integer statusCode = response.getStatusCode();
+        if (statusCode >= 200 && statusCode < 300) {
+            DummyJsonUser dummyJsonUser = (DummyJsonUser) JSON.deserialize(response.getBody(), DummyJsonUser.class);
+            Contact cont = new Contact(
+                FirstName = dummyJsonUser.firstName,
+                LastName = dummyJsonUser.lastName,
+                Email = dummyJsonUser.email,
+                Phone = dummyJsonUser.phone,
+                Birthdate = dummyJsonUser.birthDate,
+                MailingStreet = dummyJsonUser.address.address,
+                MailingCity = dummyJsonUser.address.city,
+                MailingPostalCode = dummyJsonUser.address.postalCode,
+                MailingState = dummyJsonUser.address.state,
+                MailingCountry = dummyJsonUser.address.country,
+                DummyJSON_Id__c = dummyUserId
+            );
+            upsert cont DummyJSON_Id__c; //insert/update from the JSON response using the external id (dummyUserId)
+        }
 	}
+
+    private static HttpResponse sendRequest(String endpoint, String method) {
+        HttpRequest request = new HttpRequest();
+        request.setEndpoint(endpoint);
+        request.setMethod(method);
+        Http http = new Http();
+        return http.send(request);
+    } 
+
+
 
 	/* 
 	 * Question 2
